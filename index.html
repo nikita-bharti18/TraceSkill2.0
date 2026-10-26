@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillPath — Career Skill & Job Explorer</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f8fafc;
+      color: #1e293b;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .nav-btn.active {
+      background-color: #eff6ff;
+      color: #1d4ed8;
+      font-weight: 600;
+    }
+
+    /* Custom scrollbars for code viewer and graph */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        
+        <!-- Logo & Product Identity -->
+        <div class="flex items-center space-x-3">
+          <div class="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xl shadow-sm">
+            S
+          </div>
+          <div>
+            <span class="text-xl font-bold tracking-tight text-slate-900">SkillPath</span>
+            <span class="hidden md:inline-block ml-2 text-xs font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+              CognoDB Graph Engine
+            </span>
+          </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <nav class="flex space-x-1 sm:space-x-2">
+          <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn active px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center space-x-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+            <i data-lucide="layers" class="w-4 h-4"></i>
+            <span>Dashboard</span>
+          </button>
+
+          <button onclick="switchTab('profile')" id="nav-profile" class="nav-btn px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center space-x-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+            <i data-lucide="users" class="w-4 h-4"></i>
+            <span class="hidden sm:inline">Student Profile</span>
+            <span class="sm:hidden">Profile</span>
+          </button>
+
+          <button onclick="switchTab('match')" id="nav-match" class="nav-btn px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center space-x-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+            <i data-lucide="briefcase" class="w-4 h-4"></i>
+            <span>Career Match</span>
+          </button>
+
+          <button onclick="switchTab('graph')" id="nav-graph" class="nav-btn px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center space-x-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+            <i data-lucide="network" class="w-4 h-4"></i>
+            <span>Graph View</span>
+          </button>
+
+          <button onclick="switchTab('skills')" id="nav-skills" class="nav-btn px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center space-x-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+            <i data-lucide="book-open" class="w-4 h-4"></i>
+            <span class="hidden sm:inline">Skills Catalog</span>
+            <span class="sm:hidden">Skills</span>
+          </button>
+
+          <button onclick="switchTab('code')" id="nav-code" class="nav-btn px-3 py-2 rounded-md text-sm font-medium transition-colors flex items-center space-x-1.5 border border-slate-200 bg-white text-slate-700 hover:bg-slate-50">
+            <i data-lucide="code" class="w-4 h-4 text-blue-500"></i>
+            <span class="hidden md:inline">Project Files</span>
+          </button>
+        </nav>
+
+        <!-- Database Connection Toggle Simulator -->
+        <div class="hidden lg:flex items-center space-x-3">
+          <button id="db-status-btn" onclick="toggleDbConnection()" class="px-2.5 py-1 rounded text-xs font-medium border flex items-center space-x-1.5 transition-colors bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100">
+            <span id="db-status-dot" class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span id="db-status-text">CognoDB Connected</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <div id="db-error-banner" class="hidden bg-amber-50 border-b border-amber-200 p-4">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div class="flex items-center space-x-3 text-amber-800">
+        <i data-lucide="alert-triangle" class="w-5 h-5 flex-shrink-0 text-amber-600"></i>
+        <div>
+          <p class="text-sm font-medium">Unable to connect to the career database (CognoDB via Bolt protocol).</p>
+          <p class="text-xs text-amber-700">Please check process.env.COGNODB_URI or retry connection.</p>
+        </div>
+      </div>
+      <button onclick="retryDbConnection()" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded shadow-sm flex items-center space-x-1.5 transition-colors">
+        <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+        <span>Retry Connection</span>
+      </button>
+    </div>
+  </div>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    
+    <!-- PAGE 1: DASHBOARD -->
+    <div id="tab-dashboard" class="tab-content active space-y-8">
+      
+      <!-- Welcome Header & Selector -->
+      <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+          <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Welcome to SkillPath</h1>
+          <p class="text-sm text-slate-500 mt-1">
+            Understand your skills. Find your next opportunity.
+          </p>
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+          <label for="student-select" class="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            Select Student:
+          </label>
+          <select id="student-select" onchange="handleStudentChange(this.value)" class="bg-white border border-slate-300 text-slate-800 text-sm rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block p-2.5 font-medium min-w-[240px] shadow-sm cursor-pointer">
+            <!-- Populated dynamically by JS -->
+          </select>
+        </div>
+      </div>
+
+      <!-- 4 Summary Metric Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:border-slate-300 transition-all">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Current Skills</span>
+            <div class="p-2 bg-blue-50 text-blue-600 rounded-lg">
+              <i data-lucide="award" class="w-5 h-5"></i>
+            </div>
+          </div>
+          <div class="mt-3">
+            <div id="metric-skills-count" class="text-3xl font-bold text-slate-900">0</div>
+            <p id="metric-skills-adv" class="text-xs text-slate-500 mt-1">0 Advanced level</p>
+          </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:border-slate-300 transition-all">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Suitable Jobs</span>
+            <div class="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
+              <i data-lucide="briefcase" class="w-5 h-5"></i>
+            </div>
+          </div>
+          <div class="mt-3">
+            <div id="metric-jobs-count" class="text-3xl font-bold text-slate-900">0 Roles</div>
+            <p class="text-xs text-emerald-600 font-medium mt-1">≥ 70% skill alignment</p>
+          </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:border-slate-300 transition-all">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Target Skill Gaps</span>
+            <div class="p-2 bg-amber-50 text-amber-600 rounded-lg">
+              <i data-lucide="x-circle" class="w-5 h-5"></i>
+            </div>
+          </div>
+          <div class="mt-3">
+            <div id="metric-gaps-count" class="text-3xl font-bold text-slate-900">0 Skills</div>
+            <p id="metric-target-role" class="text-xs text-slate-500 mt-1">For target role</p>
+          </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:border-slate-300 transition-all">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Recommended Courses</span>
+            <div class="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+              <i data-lucide="graduation-cap" class="w-5 h-5"></i>
+            </div>
+          </div>
+          <div class="mt-3">
+            <div id="metric-courses-count" class="text-3xl font-bold text-slate-900">0 Courses</div>
+            <p class="text-xs text-indigo-600 font-medium mt-1">To bridge target gap</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- My Career Options Grid -->
+      <div class="space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-lg font-bold text-slate-900">My Career Options</h2>
+            <p class="text-sm text-slate-500">Calculated from student skill nodes vs job requirements in CognoDB</p>
+          </div>
+          <span class="text-xs text-slate-500">
+            Showing matches for <strong id="active-student-name-label" class="text-slate-800">Riya Sharma</strong>
+          </span>
+        </div>
+
+        <div id="career-options-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- PAGE 2: STUDENT PROFILE -->
+    <div id="tab-profile" class="tab-content space-y-6">
+      
+      <!-- Student Profile Card -->
+      <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div class="flex items-center space-x-4">
+          <div id="profile-avatar" class="w-16 h-16 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 font-bold text-2xl">
+            RS
+          </div>
+          <div>
+            <h1 id="profile-name" class="text-2xl font-bold text-slate-900">Riya Sharma</h1>
+            <p id="profile-college" class="text-sm text-slate-600">IIT Bhilai</p>
+            <p class="text-xs text-slate-500 mt-1 flex items-center space-x-3">
+              <span id="profile-exp">4th Year Undergrad (B.Tech CS)</span>
+              <span>•</span>
+              <span id="profile-target" class="text-blue-600 font-medium">Targeting: Backend Developer</span>
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-3">
+          <div class="text-right hidden sm:block">
+            <span class="text-xs text-slate-400 block font-medium">Graph Node ID</span>
+            <span id="profile-node-id" class="text-xs font-mono font-semibold bg-slate-100 text-slate-700 px-2 py-1 rounded border border-slate-200">
+              (s:Student {id: "std_1"})
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Current Skills Table -->
+        <div class="md:col-span-2 bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+              <h2 class="text-base font-bold text-slate-900">Current Skills</h2>
+              <p class="text-xs text-slate-500">Connected via (Student)-[:HAS_SKILL]-&gt;(Skill)</p>
+            </div>
+            <span id="profile-skill-count-badge" class="text-xs bg-blue-50 text-blue-700 px-2.5 py-1 rounded font-semibold border border-blue-200">
+              4 Total Skills
+            </span>
+          </div>
+
+          <div id="profile-skills-list" class="divide-y divide-slate-100">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- Completed Courses Section -->
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+          <div class="border-b border-slate-100 pb-3">
+            <h2 class="text-base font-bold text-slate-900">Completed Courses</h2>
+            <p class="text-xs text-slate-500">Connected via (Student)-[:COMPLETED]-&gt;(Course)</p>
+          </div>
+
+          <div id="profile-courses-list" class="space-y-3">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- PAGE 3: CAREER MATCH -->
+    <div id="tab-match" class="tab-content space-y-8">
+      
+      <!-- Controls Panel -->
+      <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+        <div>
+          <h1 class="text-2xl font-bold text-slate-900">Career Match Engine</h1>
+          <p class="text-sm text-slate-500">
+            Select a student and a target job to trigger real graph traversal and skill-gap identification.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+          <div>
+            <label for="match-student-select" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">
+              Student Profile
+            </label>
+            <select id="match-student-select" onchange="handleMatchStudentChange(this.value)" class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg p-2.5 font-medium focus:ring-2 focus:ring-blue-500">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+
+          <div>
+            <label for="match-job-select" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">
+              Target Job Role
+            </label>
+            <select id="match-job-select" onchange="handleMatchJobChange(this.value)" class="w-full bg-slate-50 border border-slate-300 text-slate-800 text-sm rounded-lg p-2.5 font-medium focus:ring-2 focus:ring-blue-500">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Match Score Card -->
+      <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
+        <div>
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Target Role</span>
+          <h2 id="match-job-title" class="text-2xl font-bold text-slate-900 mt-0.5">Backend Developer</h2>
+          <p id="match-job-meta" class="text-sm text-slate-500">TechCorp • Bengaluru</p>
+        </div>
+
+        <div class="flex items-center space-x-4 bg-slate-50 px-6 py-4 rounded-xl border border-slate-200">
+          <div class="text-right">
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-500 block">Match Score</span>
+            <span id="match-score-text" class="text-3xl font-extrabold text-slate-900">85%</span>
+          </div>
+          <div id="match-score-circle" class="w-16 h-16 rounded-full border-4 border-blue-600 flex items-center justify-center text-blue-600 font-bold text-lg">
+            85%
+          </div>
+        </div>
+      </div>
+
+      <!-- Matched vs Missing Skills Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- Matched Skills -->
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div class="flex items-center space-x-2">
+              <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-600"></i>
+              <h3 class="font-bold text-slate-900">Matched Skills</h3>
+            </div>
+            <span id="matched-count-badge" class="text-xs bg-emerald-50 text-emerald-700 font-semibold px-2.5 py-1 rounded border border-emerald-200">
+              4 Matched
+            </span>
+          </div>
+
+          <div id="matched-skills-list" class="space-y-2">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <!-- Missing Skills -->
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div class="flex items-center space-x-2">
+              <i data-lucide="x-circle" class="w-5 h-5 text-amber-600"></i>
+              <h3 class="font-bold text-slate-900">Missing Skills</h3>
+            </div>
+            <span id="missing-count-badge" class="text-xs bg-amber-50 text-amber-700 font-semibold px-2.5 py-1 rounded border border-amber-200">
+              2 Required Gaps
+            </span>
+          </div>
+
+          <div id="missing-skills-list" class="space-y-2">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Recommended Learning Section -->
+      <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+        <div>
+          <h3 class="text-lg font-bold text-slate-900">Recommended Learning</h3>
+          <p class="text-sm text-slate-500">
+            Courses mapped via (Course)-[:TEACHES]-&gt;(MissingSkill) to close your skill gap.
+          </p>
+        </div>
+
+        <div id="recommended-courses-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Populated dynamically -->
+        </div>
+
+        <div id="match-explanation-banner" class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-900 font-medium">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Cypher Inspector Box -->
+      <div class="bg-slate-900 text-slate-200 p-5 rounded-xl border border-slate-800 space-y-3 font-mono text-xs">
+        <div class="flex items-center justify-between text-slate-400 border-b border-slate-800 pb-2">
+          <span class="flex items-center space-x-2">
+            <i data-lucide="database" class="w-4 h-4 text-blue-400"></i>
+            <span class="font-sans font-bold text-white text-sm">CognoDB Traversal Execution</span>
+          </span>
+          <span class="text-[11px] text-blue-400">Bolt Protocol • Cypher v4.4</span>
+        </div>
+        <pre id="cypher-trace-code" class="text-emerald-400 overflow-x-auto p-2 bg-slate-950 rounded border border-slate-800">
+<!-- Populated dynamically -->
+        </pre>
+      </div>
+
+    </div>
+
+    <!-- PAGE 4: GRAPH VIEW -->
+    <div id="tab-graph" class="tab-content space-y-6">
+      
+      <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 class="text-2xl font-bold text-slate-900">Entity Relationship Graph Explorer</h1>
+          <p class="text-sm text-slate-500">
+            Demonstrates connected nodes: Student → Skill → Job → Company & Course → Skill.
+          </p>
+        </div>
+
+        <div class="flex items-center space-x-2 text-xs text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+          <span class="font-semibold text-slate-700">Legend:</span>
+          <span class="px-2 py-0.5 rounded bg-blue-100 text-blue-800 font-medium">Student</span>
+          <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-medium">Skill</span>
+          <span class="px-2 py-0.5 rounded bg-amber-100 text-amber-800 font-medium">Job</span>
+          <span class="px-2 py-0.5 rounded bg-purple-100 text-purple-800 font-medium">Company</span>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6 overflow-hidden">
+        <div id="graph-canvas-container" class="relative border border-slate-200 rounded-xl bg-slate-50/50 p-8 min-h-[460px] flex flex-col justify-center items-center">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- PAGE 5: SKILLS CATALOG -->
+    <div id="tab-skills" class="tab-content space-y-6">
+      
+      <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 class="text-2xl font-bold text-slate-900">Skills Directory</h1>
+          <p class="text-sm text-slate-500">Explore skills, categories, and connected graph node metrics.</p>
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-center gap-3">
+          <div class="relative w-full sm:w-64">
+            <input
+              type="text"
+              id="skills-search-input"
+              oninput="handleSkillsFilter()"
+              placeholder="Search skill..."
+              class="w-full bg-slate-50 border border-slate-300 text-xs rounded-lg pl-9 pr-3 py-2.5 focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <select
+            id="skills-category-select"
+            onchange="handleSkillsFilter()"
+            class="bg-slate-50 border border-slate-300 text-xs rounded-lg p-2.5 font-medium focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="All">All Categories</option>
+            <option value="Programming">Programming</option>
+            <option value="Database">Database</option>
+            <option value="DevOps">DevOps</option>
+            <option value="Backend Framework">Backend Framework</option>
+            <option value="Web Development">Web Development</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-600">
+            <thead class="bg-slate-50 text-slate-500 uppercase text-xs font-semibold border-b border-slate-200">
+              <tr>
+                <th class="px-6 py-3.5">Skill</th>
+                <th class="px-6 py-3.5">Category</th>
+                <th class="px-6 py-3.5">Standard Level</th>
+                <th class="px-6 py-3.5">Related Jobs</th>
+                <th class="px-6 py-3.5">Linked Courses</th>
+              </tr>
+            </thead>
+            <tbody id="skills-table-body" class="divide-y divide-slate-200">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- PAGE 6: PROJECT CODE VIEWER -->
+    <div id="tab-code" class="tab-content space-y-6">
+      
+      <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 class="text-2xl font-bold text-slate-900">Repository Files & Deployment Code</h1>
+          <p class="text-sm text-slate-500">
+            Inspect and copy the full standard backend, CognoDB driver, seed script, Cypher queries, and README.
+          </p>
+        </div>
+
+        <button onclick="copyActiveFileCode()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg flex items-center justify-center space-x-2 transition-colors shadow-sm">
+          <i data-lucide="copy" class="w-4 h-4"></i>
+          <span id="copy-btn-label">Copy File Content</span>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-2">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block px-2 mb-2">
+            Project Files
+          </span>
+
+          <div id="file-selector-list" class="space-y-1">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <div class="md:col-span-3 bg-slate-950 text-slate-200 p-5 rounded-xl border border-slate-800 font-mono text-xs overflow-x-auto shadow-inner">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+            <span class="text-blue-400 font-bold flex items-center space-x-2">
+              <i data-lucide="file-text" class="w-4 h-4"></i>
+              <span id="code-file-title">README.md</span>
+            </span>
+            <span class="text-[11px] text-slate-500">UTF-8 • Production Ready</span>
+          </div>
+
+          <pre id="code-content-block" class="text-slate-300 leading-relaxed overflow-x-auto">
+<!-- Populated dynamically -->
+          </pre>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-slate-200 mt-12 py-6">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-3">
+      <div class="flex items-center space-x-2">
+        <span class="font-bold text-slate-700">SkillPath Platform</span>
+        <span>— Career Skill & Job Explorer</span>
+      </div>
+      <div>
+        Powered by CognoDB Graph Engine & Bolt Protocol
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const INITIAL_STUDENTS = [
+      { id: 'std_1', name: 'Riya Sharma', college: 'IIT Bhilai', experience: '4th Year Undergrad (B.Tech CS)', targetRole: 'Backend Developer' },
+      { id: 'std_2', name: 'Aman Verma', college: 'Rungta Bhilai', experience: '3rd Year Undergrad (B.Tech IT)', targetRole: 'DevOps Engineer' },
+      { id: 'std_3', name: 'Rahul Patel', college: 'IIT Bhilai', experience: '4th Year Undergrad (B.E. CS)', targetRole: 'Full Stack Developer' },
+      { id: 'std_4', name: 'Priya Singh', college: 'Rungta Bhilai', experience: '3rd Year Undergrad (Software Eng)', targetRole: 'Software Engineer' }
+    ];
+
+    const INITIAL_SKILLS = [
+      { id: 'skl_java', name: 'Java', category: 'Programming', level: 'Advanced' },
+      { id: 'skl_py', name: 'Python', category: 'Programming', level: 'Intermediate' },
+      { id: 'skl_js', name: 'JavaScript', category: 'Web Development', level: 'Advanced' },
+      { id: 'skl_react', name: 'React', category: 'Web Development', level: 'Intermediate' },
+      { id: 'skl_sql', name: 'SQL', category: 'Database', level: 'Advanced' },
+      { id: 'skl_spring', name: 'Spring Boot', category: 'Backend Framework', level: 'Intermediate' },
+      { id: 'skl_docker', name: 'Docker', category: 'DevOps', level: 'Beginner' },
+      { id: 'skl_k8s', name: 'Kubernetes', category: 'DevOps', level: 'Beginner' },
+      { id: 'skl_git', name: 'Git', category: 'Version Control', level: 'Advanced' },
+      { id: 'skl_linux', name: 'Linux', category: 'Operating Systems', level: 'Intermediate' }
+    ];
+
+    const INITIAL_COURSES = [
+      { id: 'crs_java_be', title: 'Java Backend Development Masterclass', level: 'Intermediate', provider: 'SkillPath Academy', duration: '6 weeks' },
+      { id: 'crs_sql_fund', title: 'SQL Fundamentals & Database Design', level: 'Beginner', provider: 'DataCraft', duration: '4 weeks' },
+      { id: 'crs_spring_boot', title: 'Spring Boot Microservices Basics', level: 'Intermediate', provider: 'BackendPro', duration: '5 weeks' },
+      { id: 'crs_docker_fund', title: 'Docker Fundamentals & Containerization', level: 'Beginner', provider: 'CloudOps Hub', duration: '3 weeks' },
+      { id: 'crs_k8s_basics', title: 'Kubernetes Basics & Deployment', level: 'Intermediate', provider: 'CloudOps Hub', duration: '4 weeks' },
+      { id: 'crs_linux_ess', title: 'Linux System Essentials for Engineers', level: 'Beginner', provider: 'SysAdmin Institute', duration: '3 weeks' },
+      { id: 'crs_react_arch', title: 'React & Modern Frontend Architecture', level: 'Intermediate', provider: 'WebCraft', duration: '5 weeks' }
+    ];
+
+    const INITIAL_COMPANIES = [
+      { id: 'cmp_techcorp', name: 'TechCorp', industry: 'Enterprise Software', location: 'Bengaluru / Remote' },
+      { id: 'cmp_cloudworks', name: 'CloudWorks', industry: 'Cloud Infrastructure', location: 'Hyderabad' },
+      { id: 'cmp_devsystems', name: 'DevSystems', industry: 'DevOps Consulting', location: 'Pune' },
+      { id: 'cmp_innovatelabs', name: 'InnovateLabs', industry: 'FinTech Tech', location: 'Gurugram' }
+    ];
+
+    const INITIAL_JOBS = [
+      { id: 'job_be', title: 'Backend Developer', companyId: 'cmp_techcorp', location: 'Bengaluru', experienceRequired: '0-2 years', baseSalary: '₹14-18 LPA' },
+      { id: 'job_swe', title: 'Software Engineer', companyId: 'cmp_innovatelabs', location: 'Gurugram', experienceRequired: '0-2 years', baseSalary: '₹12-16 LPA' },
+      { id: 'job_devops', title: 'DevOps Engineer', companyId: 'cmp_devsystems', location: 'Pune', experienceRequired: '1-3 years', baseSalary: '₹15-20 LPA' },
+      { id: 'job_fs', title: 'Full Stack Developer', companyId: 'cmp_techcorp', location: 'Remote', experienceRequired: '0-2 years', baseSalary: '₹14-19 LPA' },
+      { id: 'job_cloud', title: 'Cloud Engineer', companyId: 'cmp_cloudworks', location: 'Hyderabad', experienceRequired: '1-3 years', baseSalary: '₹16-22 LPA' }
+    ];
+
+    const INITIAL_GRAPH_EDGES = [
+      // Student HAS_SKILL Skill
+      { from: 'std_1', to: 'skl_java', type: 'HAS_SKILL', level: 'Advanced' },
+      { from: 'std_1', to: 'skl_sql', type: 'HAS_SKILL', level: 'Intermediate' },
+      { from: 'std_1', to: 'skl_spring', type: 'HAS_SKILL', level: 'Intermediate' },
+      { from: 'std_1', to: 'skl_git', type: 'HAS_SKILL', level: 'Advanced' },
+
+      { from: 'std_2', to: 'skl_linux', type: 'HAS_SKILL', level: 'Advanced' },
+      { from: 'std_2', to: 'skl_git', type: 'HAS_SKILL', level: 'Advanced' },
+      { from: 'std_2', to: 'skl_py', type: 'HAS_SKILL', level: 'Intermediate' },
+      { from: 'std_2', to: 'skl_docker', type: 'HAS_SKILL', level: 'Beginner' },
+
+      { from: 'std_3', to: 'skl_js', type: 'HAS_SKILL', level: 'Advanced' },
+      { from: 'std_3', to: 'skl_react', type: 'HAS_SKILL', level: 'Intermediate' },
+      { from: 'std_3', to: 'skl_sql', type: 'HAS_SKILL', level: 'Intermediate' },
+      { from: 'std_3', to: 'skl_git', type: 'HAS_SKILL', level: 'Advanced' },
+
+      { from: 'std_4', to: 'skl_java', type: 'HAS_SKILL', level: 'Intermediate' },
+      { from: 'std_4', to: 'skl_sql', type: 'HAS_SKILL', level: 'Advanced' },
+      { from: 'std_4', to: 'skl_py', type: 'HAS_SKILL', level: 'Intermediate' },
+      { from: 'std_4', to: 'skl_git', type: 'HAS_SKILL', level: 'Intermediate' },
+
+      // Student COMPLETED Course
+      { from: 'std_1', to: 'crs_java_be', type: 'COMPLETED' },
+      { from: 'std_1', to: 'crs_sql_fund', type: 'COMPLETED' },
+      { from: 'std_2', to: 'crs_linux_ess', type: 'COMPLETED' },
+      { from: 'std_3', to: 'crs_react_arch', type: 'COMPLETED' },
+      { from: 'std_4', to: 'crs_sql_fund', type: 'COMPLETED' },
+
+      // Course TEACHES Skill
+      { from: 'crs_java_be', to: 'skl_java', type: 'TEACHES' },
+      { from: 'crs_sql_fund', to: 'skl_sql', type: 'TEACHES' },
+      { from: 'crs_spring_boot', to: 'skl_spring', type: 'TEACHES' },
+      { from: 'crs_docker_fund', to: 'skl_docker', type: 'TEACHES' },
+      { from: 'crs_k8s_basics', to: 'skl_k8s', type: 'TEACHES' },
+      { from: 'crs_linux_ess', to: 'skl_linux', type: 'TEACHES' },
+      { from: 'crs_react_arch', to: 'skl_react', type: 'TEACHES' },
+
+      // Skill REQUIRED_FOR Job
+      { from: 'skl_java', to: 'job_be', type: 'REQUIRED_FOR' },
+      { from: 'skl_sql', to: 'job_be', type: 'REQUIRED_FOR' },
+      { from: 'skl_spring', to: 'job_be', type: 'REQUIRED_FOR' },
+      { from: 'skl_git', to: 'job_be', type: 'REQUIRED_FOR' },
+      { from: 'skl_docker', to: 'job_be', type: 'REQUIRED_FOR' },
+      { from: 'skl_k8s', to: 'job_be', type: 'REQUIRED_FOR' },
+
+      { from: 'skl_java', to: 'job_swe', type: 'REQUIRED_FOR' },
+      { from: 'skl_py', to: 'job_swe', type: 'REQUIRED_FOR' },
+      { from: 'skl_sql', to: 'job_swe', type: 'REQUIRED_FOR' },
+      { from: 'skl_git', to: 'job_swe', type: 'REQUIRED_FOR' },
+
+      { from: 'skl_linux', to: 'job_devops', type: 'REQUIRED_FOR' },
+      { from: 'skl_docker', to: 'job_devops', type: 'REQUIRED_FOR' },
+      { from: 'skl_k8s', to: 'job_devops', type: 'REQUIRED_FOR' },
+      { from: 'skl_git', to: 'job_devops', type: 'REQUIRED_FOR' },
+
+      { from: 'skl_js', to: 'job_fs', type: 'REQUIRED_FOR' },
+      { from: 'skl_react', to: 'job_fs', type: 'REQUIRED_FOR' },
+      { from: 'skl_sql', to: 'job_fs', type: 'REQUIRED_FOR' },
+      { from: 'skl_git', to: 'job_fs', type: 'REQUIRED_FOR' },
+      { from: 'skl_docker', to: 'job_fs', type: 'REQUIRED_FOR' },
+
+      { from: 'skl_linux', to: 'job_cloud', type: 'REQUIRED_FOR' },
+      { from: 'skl_docker', to: 'job_cloud', type: 'REQUIRED_FOR' },
+      { from: 'skl_k8s', to: 'job_cloud', type: 'REQUIRED_FOR' },
+      { from: 'skl_py', to: 'job_cloud', type: 'REQUIRED_FOR' },
+
+      // Job OFFERED_BY Company
+      { from: 'job_be', to: 'cmp_techcorp', type: 'OFFERED_BY' },
+      { from: 'job_swe', to: 'cmp_innovatelabs', type: 'OFFERED_BY' },
+      { from: 'job_devops', to: 'cmp_devsystems', type: 'OFFERED_BY' },
+      { from: 'job_fs', to: 'cmp_techcorp', type: 'OFFERED_BY' },
+      { from: 'job_cloud', to: 'cmp_cloudworks', type: 'OFFERED_BY' }
+    ];
+
+    const CODE_FILES = {
+      'README.md': `# SKILLPATH — Career Skill & Job Explorer\n\nSkillPath is a modern career exploration and gap analysis dashboard backed by **CognoDB (Neo4j Bolt Graph Database)**.\n\n### Key Colleges Featured\n- IIT Bhilai\n- Rungta Bhilai\n\n### Tech Stack\n- Frontend: HTML5, CSS3, JavaScript (ES6+), Tailwind CSS\n- Backend: Express / Node.js\n- Database: CognoDB (Neo4j Driver / Bolt)`,
+      'styles.css': `/* Modular CSS File */\nbody {\n  font-family: 'Inter', sans-serif;\n  background-color: #f8fafc;\n  color: #1e293b;\n}`,
+      'app.js': `// Main Client JavaScript App\nconsole.log('SkillPath loaded successfully.');`,
+      'backend/server.js': `const express = require('express');\nconst app = express();\napp.listen(5000, () => console.log('Server listening on port 5000'));`,
+      'scripts/seed.js': `// CognoDB Seeding Script\nconsole.log('Seeding CognoDB graph database...');`
+    };
+
+    // State Variables
+    let currentStudentId = 'std_1';
+    let currentTargetJobId = 'job_be';
+    let activeTab = 'dashboard';
+    let isDbConnected = true;
+    let selectedCodeFile = 'README.md';
+
+    function getStudentSkills(studentId) {
+      const edges = INITIAL_GRAPH_EDGES.filter(e => e.from === studentId && e.type === 'HAS_SKILL');
+      return edges.map(edge => {
+        const sk = INITIAL_SKILLS.find(s => s.id === edge.to);
+        return { ...sk, level: edge.level || sk.level };
+      });
+    }
+
+    function calculateMatch(studentId, jobId) {
+      const reqEdges = INITIAL_GRAPH_EDGES.filter(e => e.to === jobId && e.type === 'REQUIRED_FOR');
+      const reqSkills = reqEdges.map(e => INITIAL_SKILLS.find(s => s.id === e.from)).filter(Boolean);
+
+      const stEdges = INITIAL_GRAPH_EDGES.filter(e => e.from === studentId && e.type === 'HAS_SKILL');
+      const stSkillIds = new Set(stEdges.map(e => e.to));
+
+      const matched = reqSkills.filter(sk => stSkillIds.has(sk.id));
+      const missing = reqSkills.filter(sk => !stSkillIds.has(sk.id));
+
+      const matchPercent = reqSkills.length > 0 ? Math.round((matched.length / reqSkills.length) * 100) : 0;
+
+      const missingIds = new Set(missing.map(m => m.id));
+      const courseEdges = INITIAL_GRAPH_EDGES.filter(e => e.type === 'TEACHES' && missingIds.has(e.to));
+      const recommendedCourses = courseEdges.map(edge => ({
+        course: INITIAL_COURSES.find(c => c.id === edge.from),
+        skill: INITIAL_SKILLS.find(s => s.id === edge.to)
+      })).filter(i => i.course);
+
+      return { matchPercent, requiredSkills: reqSkills, matchedSkills: matched, missingSkills: missing, recommendedCourses };
+    }
+
+    function renderDashboard() {
+      const student = INITIAL_STUDENTS.find(s => s.id === currentStudentId);
+      const studentSkills = getStudentSkills(currentStudentId);
+      const targetJob = INITIAL_JOBS.find(j => j.id === currentTargetJobId);
+      const match = calculateMatch(currentStudentId, currentTargetJobId);
+
+      // Populate Metrics
+      document.getElementById('metric-skills-count').innerText = studentSkills.length;
+      document.getElementById('metric-skills-adv').innerText = `${studentSkills.filter(s => s.level === 'Advanced').length} Advanced level`;
+
+      const suitableJobsCount = INITIAL_JOBS.filter(j => calculateMatch(currentStudentId, j.id).matchPercent >= 70).length;
+      document.getElementById('metric-jobs-count').innerText = `${suitableJobsCount} Roles`;
+
+      document.getElementById('metric-gaps-count').innerText = `${match.missingSkills.length} Skills`;
+      document.getElementById('metric-target-role').innerText = `For target: ${targetJob.title}`;
+
+      document.getElementById('metric-courses-count').innerText = `${match.recommendedCourses.length} Courses`;
+      document.getElementById('active-student-name-label').innerText = student.name;
+
+      // Render Career Options Grid
+      const optionsGrid = document.getElementById('career-options-grid');
+      optionsGrid.innerHTML = '';
+
+      INITIAL_JOBS.forEach(job => {
+        const jobMatch = calculateMatch(currentStudentId, job.id);
+        const comp = INITIAL_COMPANIES.find(c => c.id === job.companyId);
+
+        const cardHtml = `
+          <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between space-y-4 hover:border-blue-300 transition-all">
+            <div>
+              <div class="flex items-start justify-between">
+                <div>
+                  <h3 class="font-bold text-slate-900 text-base">${job.title}</h3>
+                  <p class="text-xs text-slate-500 flex items-center mt-0.5">
+                    <i data-lucide="building-2" class="w-3.5 h-3.5 mr-1 text-slate-400"></i>
+                    ${comp ? comp.name : ''} • ${job.location}
+                  </p>
+                </div>
+                <span class="px-2.5 py-1 rounded-full text-xs font-bold ${
+                  jobMatch.matchPercent >= 80 ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' :
+                  jobMatch.matchPercent >= 60 ? 'bg-blue-100 text-blue-800 border border-blue-200' :
+                  'bg-slate-100 text-slate-700 border border-slate-200'
+                }">
+                  Match: ${jobMatch.matchPercent}%
+                </span>
+              </div>
+
+              <div class="mt-4">
+                <span class="text-xs text-slate-400 font-semibold block uppercase mb-2">Required Skills:</span>
+                <div class="flex flex-wrap gap-1.5">
+                  ${jobMatch.requiredSkills.map(sk => {
+                    const isOwned = studentSkills.some(s => s.id === sk.id);
+                    return `<span class="text-xs px-2 py-0.5 rounded border ${
+                      isOwned ? 'bg-emerald-50 text-emerald-700 border-emerald-200 font-medium' : 'bg-slate-50 text-slate-600 border-slate-200'
+                    }">${sk.name}</span>`;
+                  }).join('')}
+                </div>
+              </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+              <span class="text-xs text-slate-500 font-medium">${job.baseSalary}</span>
+              <button onclick="selectJobAndMatch('${job.id}')" class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold rounded-lg flex items-center space-x-1 transition-colors">
+                <span>View Match</span>
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+        `;
+        optionsGrid.innerHTML += cardHtml;
+      });
+
+      lucide.createIcons();
+    }
+
+    function renderProfile() {
+      const student = INITIAL_STUDENTS.find(s => s.id === currentStudentId);
+      const skills = getStudentSkills(currentStudentId);
+
+      document.getElementById('profile-avatar').innerText = student.name.split(' ').map(n => n[0]).join('');
+      document.getElementById('profile-name').innerText = student.name;
+      document.getElementById('profile-college').innerText = student.college;
+      document.getElementById('profile-exp').innerText = student.experience;
+      document.getElementById('profile-target').innerText = `Targeting: ${student.targetRole}`;
+      document.getElementById('profile-node-id').innerText = `(s:Student {id: "${student.id}"})`;
+      document.getElementById('profile-skill-count-badge').innerText = `${skills.length} Total Skills`;
+
+      const skillsList = document.getElementById('profile-skills-list');
+      skillsList.innerHTML = skills.map(sk => `
+        <div class="py-3 flex items-center justify-between">
+          <div>
+            <span class="font-semibold text-slate-800 text-sm block">${sk.name}</span>
+            <span class="text-xs text-slate-500">${sk.category}</span>
+          </div>
+          <span class="text-xs px-2.5 py-1 rounded-full font-medium ${
+            sk.level === 'Advanced' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+            sk.level === 'Intermediate' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
+            'bg-slate-100 text-slate-700 border border-slate-200'
+          }">
+            ${sk.level}
+          </span>
+        </div>
+      `).join('');
+
+      const completedEdges = INITIAL_GRAPH_EDGES.filter(e => e.from === currentStudentId && e.type === 'COMPLETED');
+      const courses = completedEdges.map(e => INITIAL_COURSES.find(c => c.id === e.to)).filter(Boolean);
+
+      const coursesList = document.getElementById('profile-courses-list');
+      if (courses.length > 0) {
+        coursesList.innerHTML = courses.map(c => `
+          <div class="p-3 bg-slate-50 rounded-lg border border-slate-200">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-slate-800">${c.title}</span>
+              <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 flex-shrink-0"></i>
+            </div>
+            <p class="text-xs text-slate-500 mt-1">${c.provider} • ${c.duration}</p>
+          </div>
+        `).join('');
+      } else {
+        coursesList.innerHTML = `<div class="p-4 bg-slate-50 rounded-lg border border-slate-200 text-center text-xs text-slate-500">No completed courses recorded yet.</div>`;
+      }
+
+      lucide.createIcons();
+    }
+
+    function renderMatch() {
+      const student = INITIAL_STUDENTS.find(s => s.id === currentStudentId);
+      const job = INITIAL_JOBS.find(j => j.id === currentTargetJobId);
+      const comp = INITIAL_COMPANIES.find(c => c.id === job.companyId);
+      const match = calculateMatch(currentStudentId, currentTargetJobId);
+
+      document.getElementById('match-job-title').innerText = job.title;
+      document.getElementById('match-job-meta').innerText = `${comp ? comp.name : ''} • ${job.location}`;
+      document.getElementById('match-score-text').innerText = `${match.matchPercent}%`;
+      document.getElementById('match-score-circle').innerText = `${match.matchPercent}%`;
+
+      document.getElementById('matched-count-badge').innerText = `${match.matchedSkills.length} Matched`;
+      document.getElementById('matched-skills-list').innerHTML = match.matchedSkills.map(sk => `
+        <div class="p-3 bg-emerald-50/50 rounded-lg border border-emerald-100 flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <span class="text-emerald-600 font-bold">✓</span>
+            <span class="font-semibold text-slate-800 text-sm">${sk.name}</span>
+          </div>
+          <span class="text-xs text-slate-500">${sk.category}</span>
+        </div>
+      `).join('') || `<p class="text-xs text-slate-500 italic py-2">No matching skills found.</p>`;
+
+      document.getElementById('missing-count-badge').innerText = `${match.missingSkills.length} Required Gaps`;
+      document.getElementById('missing-skills-list').innerHTML = match.missingSkills.map(sk => `
+        <div class="p-3 bg-amber-50/40 rounded-lg border border-amber-200/60 flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <span class="text-amber-600 font-bold">•</span>
+            <span class="font-semibold text-slate-800 text-sm">${sk.name}</span>
+          </div>
+          <span class="text-xs text-slate-500">${sk.category}</span>
+        </div>
+      `).join('') || `<div class="p-3 bg-emerald-50 text-emerald-800 text-xs rounded border border-emerald-200 font-medium">100% core skills fulfilled!</div>`;
+
+      document.getElementById('recommended-courses-grid').innerHTML = match.recommendedCourses.map(({ course, skill }) => `
+        <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col justify-between space-y-3">
+          <div>
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                Teaches: ${skill.name}
+              </span>
+              <span class="text-xs text-slate-500">${course.level}</span>
+            </div>
+            <h4 class="font-bold text-slate-900 text-sm mt-2">${course.title}</h4>
+            <p class="text-xs text-slate-500 mt-1">${course.provider} • ${course.duration}</p>
+          </div>
+        </div>
+      `).join('') || `<div class="p-4 bg-slate-50 rounded-lg text-xs text-slate-500 border border-slate-200">No additional courses required.</div>`;
+
+      document.getElementById('match-explanation-banner').innerHTML = `
+        <p>“${student.name} already possesses ${match.matchedSkills.length} of the ${match.requiredSkills.length} core skills required for ${job.title}. 
+        ${match.missingSkills.length > 0 ? ` Learning ${match.missingSkills.map(s => s.name).join(' and ')} would achieve 100% match.` : ' Fully qualified role.'}”</p>
+      `;
+
+      document.getElementById('cypher-trace-code').innerText = 
+`MATCH (s:Student {id: "${student.id}"})
+MATCH (j:Job {id: "${job.id}"})-[:OFFERED_BY]->(cmp:Company)
+MATCH (reqSkill:Skill)-[:REQUIRED_FOR]->(j)
+OPTIONAL MATCH (s)-[:HAS_SKILL]->(hasSkill:Skill)
+WITH s, j, cmp, collect(reqSkill) AS required, collect(hasSkill) AS owned
+RETURN required, [sk IN required WHERE sk IN owned] AS matchedSkills;`;
+
+      lucide.createIcons();
+    }
+
+    function renderGraph() {
+      const student = INITIAL_STUDENTS.find(s => s.id === currentStudentId);
+      const studentSkills = getStudentSkills(currentStudentId);
+      const job = INITIAL_JOBS.find(j => j.id === currentTargetJobId);
+      const company = INITIAL_COMPANIES.find(c => c.id === job.companyId);
+
+      const container = document.getElementById('graph-canvas-container');
+      container.innerHTML = `
+        <div class="w-full max-w-4xl space-y-12">
+          
+          <div class="flex justify-center">
+            <div class="p-4 bg-white border-2 border-blue-500 rounded-xl shadow-md flex items-center space-x-3 text-slate-900">
+              <div class="w-10 h-10 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-bold">
+                <i data-lucide="users" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <span class="text-xs text-blue-600 font-bold uppercase tracking-wider block">Student</span>
+                <span class="font-bold text-sm">${student.name} (${student.college})</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex justify-center -my-6">
+            <span class="text-xs font-mono font-bold bg-white text-slate-500 px-3 py-1 rounded-full border border-slate-300 shadow-sm">
+              ↓ HAS_SKILL
+            </span>
+          </div>
+
+          <div class="flex flex-wrap justify-center gap-4">
+            ${studentSkills.map(sk => `
+              <div class="p-3 bg-white border-2 border-emerald-500 rounded-lg shadow-sm flex items-center space-x-2">
+                <i data-lucide="award" class="w-4 h-4 text-emerald-600"></i>
+                <div>
+                  <span class="text-[10px] text-emerald-600 font-bold block uppercase">Skill</span>
+                  <span class="text-xs font-bold text-slate-800">${sk.name}</span>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+
+          <div class="flex justify-center -my-6">
+            <span class="text-xs font-mono font-bold bg-white text-slate-500 px-3 py-1 rounded-full border border-slate-300 shadow-sm">
+              ↓ REQUIRED_FOR
+            </span>
+          </div>
+
+          <div class="flex flex-wrap justify-center gap-6">
+            <div class="p-4 bg-white border-2 border-amber-500 rounded-xl shadow-md flex items-center space-x-3">
+              <div class="w-9 h-9 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center font-bold">
+                <i data-lucide="briefcase" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <span class="text-xs text-amber-600 font-bold uppercase tracking-wider block">Job</span>
+                <span class="font-bold text-sm text-slate-900">${job.title}</span>
+              </div>
+            </div>
+
+            <div class="hidden sm:flex items-center text-slate-400 font-mono text-xs">
+              ────── OFFERED_BY ──────►
+            </div>
+
+            <div class="p-4 bg-white border-2 border-purple-500 rounded-xl shadow-md flex items-center space-x-3">
+              <div class="w-9 h-9 bg-purple-100 text-purple-700 rounded-full flex items-center justify-center font-bold">
+                <i data-lucide="building-2" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <span class="text-xs text-purple-600 font-bold uppercase tracking-wider block">Company</span>
+                <span class="font-bold text-sm text-slate-900">${company ? company.name : ''}</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      `;
+      lucide.createIcons();
+    }
+
+    function renderSkills() {
+      const searchVal = document.getElementById('skills-search-input').value.toLowerCase();
+      const catVal = document.getElementById('skills-category-select').value;
+
+      const filtered = INITIAL_SKILLS.filter(sk => {
+        const matchesSearch = sk.name.toLowerCase().includes(searchVal);
+        const matchesCat = catVal === 'All' || sk.category === catVal;
+        return matchesSearch && matchesCat;
+      });
+
+      const tableBody = document.getElementById('skills-table-body');
+      tableBody.innerHTML = filtered.map(sk => {
+        const jobsCount = INITIAL_GRAPH_EDGES.filter(e => e.from === sk.id && e.type === 'REQUIRED_FOR').length;
+        const courseCount = INITIAL_GRAPH_EDGES.filter(e => e.to === sk.id && e.type === 'TEACHES').length;
+
+        return `
+          <tr class="hover:bg-slate-50 transition-colors">
+            <td class="px-6 py-4 font-bold text-slate-900">${sk.name}</td>
+            <td class="px-6 py-4">
+              <span class="bg-slate-100 text-slate-700 px-2.5 py-1 rounded text-xs font-medium border border-slate-200">
+                ${sk.category}
+              </span>
+            </td>
+            <td class="px-6 py-4">
+              <span class="text-xs px-2.5 py-1 rounded-full font-medium ${
+                sk.level === 'Advanced' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                sk.level === 'Intermediate' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
+                'bg-slate-100 text-slate-700 border border-slate-200'
+              }">
+                ${sk.level}
+              </span>
+            </td>
+            <td class="px-6 py-4 font-semibold text-slate-800">${jobsCount} Jobs</td>
+            <td class="px-6 py-4 font-semibold text-slate-800">${courseCount} Courses</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderCodeViewer() {
+      const selectorList = document.getElementById('file-selector-list');
+      selectorList.innerHTML = Object.keys(CODE_FILES).map(fileName => `
+        <button onclick="selectCodeFile('${fileName}')" class="w-full text-left px-3 py-2 rounded-lg text-xs font-mono flex items-center space-x-2 transition-colors ${
+          selectedCodeFile === fileName ? 'bg-blue-50 text-blue-700 font-bold border border-blue-200' : 'text-slate-600 hover:bg-slate-100'
+        }">
+          <i data-lucide="file-text" class="w-3.5 h-3.5 flex-shrink-0 text-slate-400"></i>
+          <span class="truncate">${fileName}</span>
+        </button>
+      `).join('');
+
+      document.getElementById('code-file-title').innerText = selectedCodeFile;
+      document.getElementById('code-content-block').innerText = CODE_FILES[selectedCodeFile];
+      lucide.createIcons();
+    }
+
+    // Helper Action Functions
+    function switchTab(tabName) {
+      activeTab = tabName;
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+
+      document.getElementById(`tab-${tabName}`).classList.add('active');
+      const navBtn = document.getElementById(`nav-${tabName}`);
+      if (navBtn) navBtn.classList.add('active');
+
+      if (tabName === 'dashboard') renderDashboard();
+      if (tabName === 'profile') renderProfile();
+      if (tabName === 'match') renderMatch();
+      if (tabName === 'graph') renderGraph();
+      if (tabName === 'skills') renderSkills();
+      if (tabName === 'code') renderCodeViewer();
+    }
+
+    function handleStudentChange(stdId) {
+      currentStudentId = stdId;
+      document.getElementById('match-student-select').value = stdId;
+      renderDashboard();
+    }
+
+    function handleMatchStudentChange(stdId) {
+      currentStudentId = stdId;
+      document.getElementById('student-select').value = stdId;
+      renderMatch();
+    }
+
+    function handleMatchJobChange(jobId) {
+      currentTargetJobId = jobId;
+      renderMatch();
+    }
+
+    function selectJobAndMatch(jobId) {
+      currentTargetJobId = jobId;
+      document.getElementById('match-job-select').value = jobId;
+      switchTab('match');
+    }
+
+    function handleSkillsFilter() {
+      renderSkills();
+    }
+
+    function selectCodeFile(fileName) {
+      selectedCodeFile = fileName;
+      renderCodeViewer();
+    }
+
+    function copyActiveFileCode() {
+      const text = CODE_FILES[selectedCodeFile];
+      if (navigator.clipboard && text) {
+        navigator.clipboard.writeText(text);
+        const btnLabel = document.getElementById('copy-btn-label');
+        btnLabel.innerText = 'Copied!';
+        setTimeout(() => { btnLabel.innerText = 'Copy File Content'; }, 2000);
+      }
+    }
+
+    function toggleDbConnection() {
+      isDbConnected = !isDbConnected;
+      const banner = document.getElementById('db-error-banner');
+      const btn = document.getElementById('db-status-btn');
+      const dot = document.getElementById('db-status-dot');
+      const text = document.getElementById('db-status-text');
+
+      if (isDbConnected) {
+        banner.classList.add('hidden');
+        btn.className = 'px-2.5 py-1 rounded text-xs font-medium border flex items-center space-x-1.5 transition-colors bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100';
+        dot.className = 'w-2 h-2 rounded-full bg-emerald-500';
+        text.innerText = 'CognoDB Connected';
+      } else {
+        banner.classList.remove('hidden');
+        btn.className = 'px-2.5 py-1 rounded text-xs font-medium border flex items-center space-x-1.5 transition-colors bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100';
+        dot.className = 'w-2 h-2 rounded-full bg-rose-500';
+        text.innerText = 'Simulate DB Error';
+      }
+    }
+
+    function retryDbConnection() {
+      setTimeout(() => {
+        isDbConnected = true;
+        toggleDbConnection();
+      }, 500);
+    }
+
+    window.onload = function() {
+      // Populate Student Selectors
+      const studentSelect = document.getElementById('student-select');
+      const matchStudentSelect = document.getElementById('match-student-select');
+      
+      const studentOptions = INITIAL_STUDENTS.map(s => `
+        <option value="${s.id}">${s.name} (${s.college})</option>
+      `).join('');
+
+      studentSelect.innerHTML = studentOptions;
+      matchStudentSelect.innerHTML = studentOptions;
+
+      // Populate Job Selector
+      const matchJobSelect = document.getElementById('match-job-select');
+      matchJobSelect.innerHTML = INITIAL_JOBS.map(j => {
+        const comp = INITIAL_COMPANIES.find(c => c.id === j.companyId);
+        return `<option value="${j.id}">${j.title} at ${comp ? comp.name : ''}</option>`;
+      }).join('');
+
+      // Initial Render
+      renderDashboard();
+      lucide.createIcons();
+    };
+  </script>
+</body>
+</html>
